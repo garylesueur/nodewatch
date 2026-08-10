@@ -15,12 +15,19 @@ struct MenuBarView: View {
         store.showHelpers ? 0 : store.services.filter { $0.kind == .helper }.count
     }
 
+    private var serverSummary: String {
+        if store.serverCount == 0 {
+            return "No servers running"
+        }
+        return "\(store.serverCount) server\(store.serverCount == 1 ? "" : "s") running"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("NodeWatch").font(.headline)
-                    Text("\(items.count) process\(items.count == 1 ? "" : "es") · \(store.serverCount) servers")
+                    Text(serverSummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -45,12 +52,12 @@ struct MenuBarView: View {
 
             if items.isEmpty {
                 VStack(spacing: 9) {
-                    Image(systemName: "moon.zzz")
+                    Image(systemName: "server.rack")
                         .font(.title2)
                         .foregroundStyle(.secondary)
-                    Text("No development services running")
+                    Text("No servers running")
                         .font(.subheadline.weight(.medium))
-                    Text("NodeWatch will keep checking in the background.")
+                    Text(emptyStateDescription)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if hiddenHelperCount > 0 {
@@ -60,41 +67,74 @@ struct MenuBarView: View {
                         .controlSize(.small)
                     }
                 }
-                .frame(maxWidth: .infinity, minHeight: 130)
+                .frame(maxWidth: .infinity, minHeight: 174)
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(items) { service in
-                            compactRow(service)
-                            if service.id != items.last?.id {
-                                Divider()
+                VStack(spacing: 0) {
+                    if store.serverCount == 0 {
+                        HStack(spacing: 8) {
+                            Image(systemName: "info.circle")
+                                .foregroundStyle(.secondary)
+                            Text("No servers running. Other Node.js processes are shown below.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+
+                        Divider()
+                    }
+
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(items) { service in
+                                compactRow(service)
+                                if service.id != items.last?.id {
+                                    Divider()
+                                }
                             }
                         }
                     }
                 }
-                .frame(maxHeight: 520)
+                .frame(minHeight: 174, maxHeight: 520, alignment: .top)
             }
 
             Divider()
 
-            HStack {
-                Button("Check for Updates…") {
-                    updater.checkForUpdates()
-                }
-                .disabled(!updater.isConfigured)
-
-                Button("Show Main Window") {
+            HStack(spacing: 8) {
+                Button {
                     openWindow(id: "main")
                     NSApp.activate(ignoringOtherApps: true)
+                } label: {
+                    Label("Open NodeWatch", systemImage: "macwindow")
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
 
                 Spacer()
 
-                Button("Quit NodeWatch") { NSApp.terminate(nil) }
+                Menu {
+                    Button("Check for Updates…", systemImage: "arrow.triangle.2.circlepath") {
+                        updater.checkForUpdates()
+                    }
+                    .disabled(!updater.isConfigured)
+
+                    Divider()
+
+                    Button("Quit NodeWatch", systemImage: "power", role: .destructive) {
+                        NSApp.terminate(nil)
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("More actions")
             }
             .padding(10)
         }
-        .frame(width: 390)
+        .frame(width: 410)
         .confirmationDialog(
             "Stop \(store.pendingTermination?.name ?? "service")?",
             isPresented: Binding(
@@ -116,18 +156,28 @@ struct MenuBarView: View {
         }
     }
 
+    private var emptyStateDescription: String {
+        if hiddenHelperCount > 0 {
+            return "\(hiddenHelperCount) helper process\(hiddenHelperCount == 1 ? " is" : "es are") hidden."
+        }
+        return "NodeWatch will keep checking in the background."
+    }
+
     private func compactRow(_ service: NodeService) -> some View {
         HStack(spacing: 6) {
-            Button {
+            Group {
                 if store.webEndpoint(for: service) != nil {
-                    store.open(service)
+                    Button {
+                        store.open(service)
+                    } label: {
+                        compactRowLabel(service)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open in browser")
+                } else {
+                    compactRowLabel(service)
                 }
-            } label: {
-                compactRowLabel(service)
             }
-            .buttonStyle(.plain)
-            .disabled(store.webEndpoint(for: service) == nil)
-            .help(store.webEndpoint(for: service) == nil ? "No HTML page detected" : "Open in browser")
 
             Menu {
                 if store.webEndpoint(for: service) != nil {
