@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="NodeWatch shows the Node.js development services running on your Mac.">
+    <meta name="theme-color" content="#101713">
+    <title>NodeWatch — Your local services, at a glance</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="nav" aria-label="Primary navigation">
+      <a class="brand" href="/" aria-label="NodeWatch home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        NodeWatch
+      </a>
+      <a class="nav-link" href="https://github.com/garylesueur/nodewatch">GitHub</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow"><span></span> Native macOS menu-bar app</div>
+        <h1>Your local services,<br><em>at a glance.</em></h1>
+        <p class="lede">
+          See every Node.js service running on your Mac. Find its port, open the project,
+          inspect resource use, or stop it—without digging through terminal tabs.
+        </p>
+        <div class="actions">
+          <a class="button" href="https://github.com/garylesueur/nodewatch/releases/latest">
+            Download for macOS
+            <span aria-hidden="true">↓</span>
+          </a>
+          <span class="requirement">macOS 14+ · Apple Silicon &amp; Intel</span>
+        </div>
+      </section>
+
+      <section class="terminal" aria-label="Example services">
+        <div class="terminal-bar">
+          <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span>NODEWATCH / LOCAL SERVICES</span>
+          <span class="live"><i></i> LIVE</span>
+        </div>
+        <div class="service heading" aria-hidden="true">
+          <span>PROJECT</span><span>TYPE</span><span>PORT</span><span>CPU</span><span>MEMORY</span>
+        </div>
+        <div class="service">
+          <strong><i class="status"></i> storefront</strong><span>Web</span><span>:3000</span><span>2.1%</span><span>184 MB</span>
+        </div>
+        <div class="service">
+          <strong><i class="status"></i> payments-api</strong><span>API</span><span>:8787</span><span>0.8%</span><span>96 MB</span>
+        </div>
+        <div class="service">
+          <strong><i class="status"></i> mobile-app</strong><span>Mobile</span><span>:8081</span><span>4.3%</span><span>312 MB</span>
+        </div>
+      </section>
+
+      <section class="features" aria-label="Features">
+        <article><b>01</b><h2>Find everything</h2><p>Discovers Node.js, Bun, Deno, Expo, and their listening ports automatically.</p></article>
+        <article><b>02</b><h2>Jump straight in</h2><p>Open a web service, project folder, Finder, or Terminal in one click.</p></article>
+        <article><b>03</b><h2>Stay in control</h2><p>Watch CPU and memory use, understand process trees, and stop services gracefully.</p></article>
+      </section>
+    </main>
+
+    <footer>
+      <span>NodeWatch</span>
+      <span>Runs locally. No account. No telemetry.</span>
+    </footer>
+  </body>
+</html>

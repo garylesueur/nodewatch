@@ -124,7 +124,7 @@ By default, the builder:
 - creates a universal `arm64` and `x86_64` binary;
 - embeds `Sparkle.framework` and its helper processes;
 - writes the app's `Info.plist`;
-- uses version `0.1.0`, build `1`, and bundle ID `com.nodewatch.app`;
+- uses version `0.1.0`, build `1`, and bundle ID `dev.gaz.nodewatch`;
 - ad-hoc signs the app for local use; and
 - omits the Sparkle feed and key, so updates stay disabled.
 
@@ -142,7 +142,7 @@ The build script accepts these optional settings:
 | --- | --- | --- |
 | `NODEWATCH_VERSION` | `0.1.0` | User-facing marketing version. |
 | `NODEWATCH_BUILD_NUMBER` | `1` | Positive internal build number. |
-| `NODEWATCH_BUNDLE_ID` | `com.nodewatch.app` | Stable reverse-DNS app identifier. |
+| `NODEWATCH_BUNDLE_ID` | `dev.gaz.nodewatch` | Stable reverse-DNS app identifier. |
 | `NODEWATCH_ARCHS` | `arm64 x86_64` | Architectures to include. |
 | `NODEWATCH_SIGNING_IDENTITY` | `-` | Codesigning identity; `-` means ad-hoc. |
 | `SPARKLE_FEED_URL` | unset | HTTPS URL of `appcast.xml`. |
@@ -163,8 +163,9 @@ A public release goes through this chain:
 5. Apple's notarization ticket is stapled to the app.
 6. The final app ZIP is signed with a separate Sparkle **EdDSA** key.
 7. Sparkle generates or updates `appcast.xml`.
-8. The ZIP and appcast are uploaded to the website.
-9. Installed copies periodically read the appcast and can securely download and install the new release.
+8. The ZIP and appcast are uploaded to a GitHub Release.
+9. GitHub Pages publishes the website and latest appcast at `nodewatch.gaz.dev`.
+10. Installed copies periodically read the appcast and can securely download and install the new release.
 
 There are two independent trust systems:
 
@@ -177,14 +178,14 @@ Both are required by the release script. The Sparkle private key remains in your
 
 Do these steps once before the first release.
 
-### 1. Choose the permanent identity and URLs
+### 1. Permanent identity and URLs
 
-Decide these before shipping version 1.0:
+NodeWatch uses these permanent release values:
 
-- A bundle identifier you control, such as `com.yourcompany.nodewatch`.
-- The NodeWatch product/download page.
-- A permanent HTTPS appcast URL, such as `https://example.com/downloads/nodewatch/appcast.xml`.
-- A permanent HTTPS download directory, such as `https://example.com/downloads/nodewatch/`.
+- Bundle identifier: `dev.gaz.nodewatch`
+- Product/download page: `https://nodewatch.gaz.dev/`
+- Sparkle appcast: `https://nodewatch.gaz.dev/appcast.xml`
+- Release downloads: `https://github.com/garylesueur/nodewatch/releases`
 
 Changing the bundle identifier later makes macOS treat the result as a different app and separates its saved preferences. Changing the feed URL requires releasing an app update that knows the new URL before the old location disappears.
 
@@ -252,17 +253,14 @@ From the repository root, run:
 ```sh
 NODEWATCH_VERSION=1.0.0 \
 NODEWATCH_BUILD_NUMBER=100 \
-NODEWATCH_BUNDLE_ID=com.example.nodewatch \
 NODEWATCH_SIGNING_IDENTITY="Developer ID Application: Example Company (TEAMID)" \
-SPARKLE_FEED_URL="https://example.com/downloads/nodewatch/appcast.xml" \
 SPARKLE_PUBLIC_KEY="BASE64_PUBLIC_KEY" \
-SPARKLE_DOWNLOAD_URL_PREFIX="https://example.com/downloads/nodewatch/" \
 SPARKLE_KEY_ACCOUNT=nodewatch \
 NOTARYTOOL_PROFILE=nodewatch-notary \
 ./scripts/release.sh
 ```
 
-Replace every example with the permanent real value. Do not add these secrets and release settings directly to a tracked script.
+Replace the signing identity and public key with the real values. The bundle identifier, website, appcast, and GitHub Release URL are project defaults. Do not add credentials or private keys to a tracked script.
 
 The release script refuses to continue if required values are missing, the build number is invalid, update URLs are not HTTPS, or the signing identity is ad-hoc. It then:
 
@@ -285,20 +283,28 @@ outputs/updates/appcast.xml
 
 Sparkle may also create delta update files and an `old_updates/` directory as more versions accumulate.
 
-## Publish the release on the website
+## Publish with GitHub Releases and Pages
 
-Upload the contents of `outputs/updates/` to the directory represented by `SPARKLE_DOWNLOAD_URL_PREFIX`. At minimum, these URLs must work publicly over HTTPS:
+Authenticate the GitHub CLI, then create a draft release from the verified local output:
 
-```text
-https://example.com/downloads/nodewatch/NodeWatch-1.0.0.zip
-https://example.com/downloads/nodewatch/appcast.xml
+```sh
+gh auth login -h github.com
+NODEWATCH_VERSION=1.0.0 ./scripts/publish-release.sh
 ```
 
-The website's Download button should point to the versioned ZIP. Users download it, open the ZIP, drag `NodeWatch.app` to `/Applications`, and launch it.
+The command attaches the signed/notarized ZIP, signed appcast, and any delta updates to a draft GitHub Release. Review the draft in GitHub and publish it only after the release smoke test passes.
 
-Configure the web server to serve the XML feed as XML and ZIP files as downloads. Avoid caching `appcast.xml` for long periods; otherwise users may not see a newly published update promptly. Versioned ZIP files can be cached indefinitely.
+Publishing the release triggers the Pages workflow. It deploys the landing page from `site/` and copies the newest release's `appcast.xml` to `https://nodewatch.gaz.dev/appcast.xml`. The website's download button points to the latest GitHub Release.
 
-Keep previous release archives in `outputs/updates/` when generating a new appcast. Sparkle uses them to make smaller delta updates and moves older material into `old_updates/` according to its retention rules. Do not publish a new appcast until its referenced ZIP and delta files are already available at their final URLs.
+Configure GitHub Pages to use GitHub Actions and set its custom domain to `nodewatch.gaz.dev`. At the DNS provider for `gaz.dev`, create this record:
+
+```text
+Type: CNAME
+Name: nodewatch
+Value: garylesueur.github.io
+```
+
+Keep previous archives in `outputs/updates/` when generating later appcasts. Sparkle preserves older feed entries and can create smaller delta updates. Do not publish until every newly generated file referenced by the appcast is attached to the new release and older referenced files remain available from their original releases.
 
 ## Test a release before announcing it
 
@@ -324,8 +330,9 @@ For every later release:
 1. Update the marketing version and increment the integer build number.
 2. Add release notes next to the archive if desired; Sparkle accepts matching `.html`, `.md`, or `.txt` filenames.
 3. Run the same `scripts/release.sh` command with the new numbers.
-4. Upload the newly generated files, with the appcast published last.
-5. Test updating from the previous public version.
+4. Run `NODEWATCH_VERSION=x.y.z ./scripts/publish-release.sh` and review the draft.
+5. Publish the GitHub Release; Pages deploys the updated appcast automatically.
+6. Test updating from the previous public version.
 
 Keep these values stable across releases:
 
