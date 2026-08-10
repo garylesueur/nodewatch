@@ -153,11 +153,6 @@ final class ServiceStore: ObservableObject {
         }
     }
 
-    func stop() {
-        refreshTask?.cancel()
-        refreshTask = nil
-    }
-
     func refresh() async {
         guard !refreshInProgress else { return }
         refreshInProgress = true
