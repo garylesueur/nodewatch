@@ -6,14 +6,15 @@ output_dir="$project_dir/outputs"
 updates_dir="$output_dir/updates"
 app_dir="$output_dir/NodeWatch.app"
 
+export NODEWATCH_BUNDLE_ID="${NODEWATCH_BUNDLE_ID:-dev.gaz.nodewatch}"
+export SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://nodewatch.gaz.dev/appcast.xml}"
+export SPARKLE_DOWNLOAD_URL_PREFIX="${SPARKLE_DOWNLOAD_URL_PREFIX:-https://github.com/garylesueur/nodewatch/releases/download/v${NODEWATCH_VERSION:-}/}"
+
 required=(
   NODEWATCH_VERSION
   NODEWATCH_BUILD_NUMBER
-  NODEWATCH_BUNDLE_ID
   NODEWATCH_SIGNING_IDENTITY
-  SPARKLE_FEED_URL
   SPARKLE_PUBLIC_KEY
-  SPARKLE_DOWNLOAD_URL_PREFIX
   NOTARYTOOL_PROFILE
 )
 
@@ -23,6 +24,11 @@ for name in "${required[@]}"; do
     exit 1
   fi
 done
+
+if [[ ! "$NODEWATCH_VERSION" =~ '^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$' ]]; then
+  print -u2 "NODEWATCH_VERSION must be a semantic version such as 1.0.0 or 1.0.0-beta.1."
+  exit 1
+fi
 
 if [[ "$NODEWATCH_SIGNING_IDENTITY" == "-" ]]; then
   print -u2 "A Developer ID Application identity is required for a release."
@@ -55,6 +61,7 @@ generate_appcast="$project_dir/.build/artifacts/sparkle/Sparkle/bin/generate_app
 "$generate_appcast" \
   --account "${SPARKLE_KEY_ACCOUNT:-nodewatch}" \
   --download-url-prefix "$SPARKLE_DOWNLOAD_URL_PREFIX" \
+  --link "https://nodewatch.gaz.dev/" \
   "$updates_dir"
 
 spctl --assess --type execute --verbose=2 "$app_dir"

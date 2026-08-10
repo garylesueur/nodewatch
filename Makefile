@@ -49,7 +49,7 @@ check: format-check lint test doctor
 ci: check
 
 pin-actions:
-	npx --yes pin-github-action .github/workflows/ci.yml
+	npx --yes pin-github-action .github/workflows/*.yml
 
 clean:
 	swift package clean

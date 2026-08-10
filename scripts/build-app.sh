@@ -14,7 +14,7 @@ app_icon="$project_dir/Assets/NodeWatch.icns"
 
 version="${NODEWATCH_VERSION:-0.1.0}"
 build_number="${NODEWATCH_BUILD_NUMBER:-1}"
-bundle_id="${NODEWATCH_BUNDLE_ID:-com.nodewatch.app}"
+bundle_id="${NODEWATCH_BUNDLE_ID:-dev.gaz.nodewatch}"
 signing_identity="${NODEWATCH_SIGNING_IDENTITY:--}"
 feed_url="${SPARKLE_FEED_URL:-}"
 public_key="${SPARKLE_PUBLIC_KEY:-}"
