@@ -1,0 +1,7 @@
+format: xcode
+retain_public: false
+strict: true
+quiet: false
+relative_results: true
+disable_update_check: true
+json_package_manifest_path: work/package-description.json

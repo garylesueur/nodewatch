@@ -1,0 +1,57 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode user state and build products
+DerivedData/
+build/
+*.dSYM/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+.xcode.env.local
+
+# Test results and coverage
+*.xcresult
+*.profdata
+.coverage/
+
+# Quality-tool caches and reports
+.swiftformat.cache
+.swiftlint.cache
+.periphery/
+lint-report.*
+coverage-report/
+
+# NodeWatch local artifacts
+work/
+outputs/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.mobileprovision
+
+# Local agent and task state
+.codex/
+.agents/
+
+# Editor state
+.vscode/
+.idea/
+*.swp
+*.swo
+*.orig
+*.rej

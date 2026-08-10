@@ -1,0 +1,11 @@
+#!/bin/zsh
+set -euo pipefail
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+    if [[ "$remote_ref" == "refs/heads/main" || "$remote_ref" == "refs/heads/master" ]]; then
+        echo "Direct pushes to ${remote_ref#refs/heads/} are not allowed. Open a pull request instead." >&2
+        exit 1
+    fi
+done
+
+make check

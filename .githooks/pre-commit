@@ -1,0 +1,12 @@
+#!/bin/zsh
+set -euo pipefail
+
+branch="$(git branch --show-current)"
+if [[ "$branch" == "main" || "$branch" == "master" ]]; then
+    echo "Direct commits to $branch are not allowed. Create a feature branch first." >&2
+    exit 1
+fi
+
+make format-check
+make lint
+make test
