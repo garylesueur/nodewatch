@@ -1,12 +1,25 @@
 import Foundation
 
-public enum WorkloadPresentation: String, Sendable {
+public enum WorkloadPresentation: String, CaseIterable, Sendable {
     case web = "Web"
-    case mobile = "Mobile"
     case api = "API"
+    case mobile = "Mobile"
     case agent = "Agent"
     case tool = "Tool"
     case process = "Process"
+
+    public static let defaultVisible: Set<Self> = [.web, .mobile, .api, .agent]
+
+    public var sortPriority: Int {
+        switch self {
+        case .web: 0
+        case .api: 1
+        case .mobile: 2
+        case .agent: 3
+        case .tool: 4
+        case .process: 5
+        }
+    }
 
     public var symbol: String {
         switch self {

@@ -45,6 +45,25 @@ struct NodeServiceTests {
         #expect(!presentation.symbol.isEmpty)
     }
 
+    @Test("Raw processes and tools are hidden by default")
+    func defaultWorkloadVisibility() {
+        #expect(WorkloadPresentation.defaultVisible == [.web, .mobile, .api, .agent])
+        #expect(!WorkloadPresentation.defaultVisible.contains(.process))
+        #expect(!WorkloadPresentation.defaultVisible.contains(.tool))
+    }
+
+    @Test("Useful endpoints sort before supporting and raw processes")
+    func workloadSortOrder() {
+        #expect(WorkloadPresentation.allCases.sorted { $0.sortPriority < $1.sortPriority } == [
+            .web,
+            .api,
+            .mobile,
+            .agent,
+            .tool,
+            .process,
+        ])
+    }
+
     private func fixture(
         pid: Int32,
         parentPID: Int32 = 1,

@@ -13,9 +13,15 @@ struct ContentView: View {
                 if !store.services.isEmpty {
                     VStack(spacing: 10) {
                         Image(systemName: "eye.slash").font(.largeTitle).foregroundStyle(.secondary)
-                        Text(hiddenHelpersDescription)
+                        Text("No services match the displayed types")
                             .font(.headline)
-                        Button("Show Helpers") { store.showHelpers = true }
+                        Text(
+                            "\(store.hiddenServiceCount) service"
+                                + "\(store.hiddenServiceCount == 1 ? " is" : "s are") hidden"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Button("Show All Types") { store.showAllPresentations() }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -63,11 +69,6 @@ struct ContentView: View {
         }
     }
 
-    private var hiddenHelpersDescription: String {
-        let noun = store.services.count == 1 ? "process is" : "processes are"
-        return "\(store.services.count) helper \(noun) hidden"
-    }
-
     private var header: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
@@ -80,9 +81,7 @@ struct ContentView: View {
 
             Spacer()
 
-            Toggle("Show helpers", isOn: $store.showHelpers)
-                .toggleStyle(.switch)
-                .controlSize(.small)
+            WorkloadFilterMenu(store: store, showTitle: true)
 
             SettingsLink {
                 Image(systemName: "gearshape")
@@ -106,6 +105,36 @@ struct ContentView: View {
                 .padding(.vertical, 5)
         }
         .listStyle(.inset)
+    }
+}
+
+struct WorkloadFilterMenu: View {
+    @ObservedObject var store: ServiceStore
+    let showTitle: Bool
+
+    var body: some View {
+        Menu {
+            ForEach(WorkloadPresentation.allCases, id: \.self) { presentation in
+                Toggle(
+                    presentation.rawValue,
+                    isOn: Binding(
+                        get: { store.isPresentationVisible(presentation) },
+                        set: { store.setPresentation(presentation, isVisible: $0) }
+                    )
+                )
+            }
+
+            Divider()
+
+            Button("Show All") { store.showAllPresentations() }
+        } label: {
+            if showTitle {
+                Label("Types", systemImage: "line.3.horizontal.decrease.circle")
+            } else {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+            }
+        }
+        .help("Choose displayed workload types")
     }
 }
 

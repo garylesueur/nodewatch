@@ -7,7 +7,7 @@ public struct WebEndpoint: Hashable, Sendable {
     public let serverName: String?
 
     public init(url: URL, statusCode: Int, contentType: String, serverName: String?) {
-        self.url = url
+        self.url = url.replacingLoopbackHostWithLocalhost
         self.statusCode = statusCode
         self.contentType = contentType
         self.serverName = serverName
@@ -23,5 +23,17 @@ public struct WebEndpoint: Hashable, Sendable {
             return serverName
         }
         return "HTML · HTTP \(statusCode)"
+    }
+}
+
+private extension URL {
+    var replacingLoopbackHostWithLocalhost: URL {
+        guard host == "127.0.0.1" || host == "::1",
+              var components = URLComponents(url: self, resolvingAgainstBaseURL: false)
+        else {
+            return self
+        }
+        components.host = "localhost"
+        return components.url ?? self
     }
 }

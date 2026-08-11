@@ -6,13 +6,10 @@ struct MenuBarView: View {
     @ObservedObject var store: ServiceStore
     @ObservedObject var updater: AppUpdater
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismiss) private var dismiss
 
     private var items: [NodeService] {
         store.treeOrdered(store.visibleServices)
-    }
-
-    private var hiddenHelperCount: Int {
-        store.showHelpers ? 0 : store.services.filter { $0.kind == .helper }.count
     }
 
     private var serverSummary: String {
@@ -32,6 +29,10 @@ struct MenuBarView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+                WorkloadFilterMenu(store: store, showTitle: false)
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+
                 SettingsLink {
                     Image(systemName: "gearshape")
                 }
@@ -60,9 +61,12 @@ struct MenuBarView: View {
                     Text(emptyStateDescription)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    if hiddenHelperCount > 0 {
-                        Button("Show \(hiddenHelperCount) hidden helper\(hiddenHelperCount == 1 ? "" : "s")") {
-                            store.showHelpers = true
+                    if store.hiddenServiceCount > 0 {
+                        Button(
+                            "Show all \(store.hiddenServiceCount) hidden "
+                                + "service\(store.hiddenServiceCount == 1 ? "" : "s")"
+                        ) {
+                            store.showAllPresentations()
                         }
                         .controlSize(.small)
                     }
@@ -103,8 +107,7 @@ struct MenuBarView: View {
 
             HStack(spacing: 8) {
                 Button {
-                    openWindow(id: "main")
-                    NSApp.activate(ignoringOtherApps: true)
+                    openMainWindow()
                 } label: {
                     Label("Open NodeWatch", systemImage: "macwindow")
                 }
@@ -157,10 +160,20 @@ struct MenuBarView: View {
     }
 
     private var emptyStateDescription: String {
-        if hiddenHelperCount > 0 {
-            return "\(hiddenHelperCount) helper process\(hiddenHelperCount == 1 ? " is" : "es are") hidden."
+        if store.hiddenServiceCount > 0 {
+            return "The current type filter hides \(store.hiddenServiceCount) "
+                + "service\(store.hiddenServiceCount == 1 ? "" : "s")."
         }
         return "NodeWatch will keep checking in the background."
+    }
+
+    private func openMainWindow() {
+        dismiss()
+        openWindow(id: "main")
+        NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.async {
+            NSApp.windows.first(where: \.canBecomeMain)?.makeKeyAndOrderFront(nil)
+        }
     }
 
     private func compactRow(_ service: NodeService) -> some View {
@@ -229,7 +242,7 @@ struct MenuBarView: View {
                 }
                 HStack(spacing: 5) {
                     if let endpoint = store.webEndpoint(for: service) {
-                        Text("\(endpoint.url.host ?? "localhost"):\(endpoint.url.port ?? 80)")
+                        Text("localhost:\(endpoint.url.port ?? 80)")
                         Text("· \(endpoint.detail)")
                     } else if let endpoint = store.httpEndpoint(for: service) {
                         Text("localhost:\(endpoint.url.port ?? 80)")
