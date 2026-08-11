@@ -14,6 +14,7 @@ The first two require no Apple Developer account. Public releases require Develo
 
 - Lives in the macOS menu bar and also provides a normal app window.
 - Finds Node.js, npm, pnpm, Yarn, Bun, Deno, Expo, and related development processes.
+- Detects NodeWatch instances launched from SwiftPM or Xcode debug builds.
 - Detects listening TCP ports and probes localhost HTTP endpoints.
 - Opens confirmed HTML services in the default browser.
 - Classifies Web, Mobile, API, Agent, Tool, and generic Process workloads.

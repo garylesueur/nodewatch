@@ -22,7 +22,7 @@ actor ProcessScanner {
         let processes = processOutput
             .split(separator: "\n")
             .compactMap(parseProcess)
-            .filter { isMonitoredProcess($0.command, runtimeNames: runtimeNames) }
+            .filter { ProcessDetection.isMonitored(command: $0.command, runtimeNames: runtimeNames) }
 
         guard !processes.isEmpty else { return [] }
 
@@ -79,13 +79,6 @@ actor ProcessScanner {
             uptime: String(parts[4]),
             command: String(parts[5])
         )
-    }
-
-    private func isMonitoredProcess(_ command: String, runtimeNames: [String]) -> Bool {
-        let lower = command.lowercased()
-        let executable = lower.split(separator: " ").first.map(String.init) ?? ""
-        let executableName = URL(fileURLWithPath: executable).lastPathComponent
-        return runtimeNames.map { $0.lowercased() }.contains(executableName)
     }
 
     private func listeningPorts(for pids: Set<Int32>) throws -> [Int32: [Int]] {
@@ -167,6 +160,7 @@ actor ProcessScanner {
     private func displayName(for command: String) -> String {
         let lower = command.lowercased()
         let names: [(String, String)] = [
+            ("nodewatch", "NodeWatch"),
             ("vite", "Vite"), ("next", "Next.js"), ("expo", "Expo / Metro"),
             ("metro", "Metro"), ("webpack", "Webpack"), ("parcel", "Parcel"),
             ("nuxt", "Nuxt"), ("astro", "Astro"), ("nodemon", "Nodemon"),
