@@ -24,9 +24,12 @@ struct SettingsView: View {
             }
 
             Section("Runtime executables") {
-                Text("Comma-separated executable names that NodeWatch should inspect.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "Comma-separated executable names that NodeWatch should inspect. "
+                        + "NodeWatch debug builds are detected automatically."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
                 TextField("node, npm, pnpm, bun", text: $store.runtimeNamesText)
                     .textFieldStyle(.roundedBorder)
