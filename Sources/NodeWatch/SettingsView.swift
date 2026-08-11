@@ -1,4 +1,5 @@
 import AppKit
+import NodeWatchCore
 import SwiftUI
 
 struct SettingsView: View {
@@ -76,8 +77,26 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Displayed workload types") {
+                Text(
+                    "Choose which services appear in the main window and menu bar. "
+                        + "Your choices are saved automatically."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                ForEach(WorkloadPresentation.allCases, id: \.self) { presentation in
+                    Toggle(
+                        presentation.rawValue,
+                        isOn: Binding(
+                            get: { store.isPresentationVisible(presentation) },
+                            set: { store.setPresentation(presentation, isVisible: $0) }
+                        )
+                    )
+                }
+            }
+
             Section("Behaviour") {
-                Toggle("Show helper processes", isOn: $store.showHelpers)
                 Toggle("Show CPU and memory usage", isOn: $store.showResourceUsage)
                 Toggle("Probe localhost HTTP endpoints for clickable web pages", isOn: $store.probeWebServices)
 

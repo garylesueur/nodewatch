@@ -30,6 +30,15 @@ struct WebEndpointTests {
         #expect(try fixture(contentType: "text/html", serverName: "").detail == "HTML · HTTP 200")
     }
 
+    @Test("Loopback endpoints use localhost for display and browser launches")
+    func normalizesLoopbackHost() throws {
+        #expect(try fixture(contentType: "text/html").url == URL(string: "http://localhost:3000/"))
+
+        let ipv6URL = try #require(URL(string: "http://[::1]:8080/api"))
+        let endpoint = WebEndpoint(url: ipv6URL, statusCode: 200, contentType: "application/json", serverName: nil)
+        #expect(endpoint.url == URL(string: "http://localhost:8080/api"))
+    }
+
     private func fixture(
         contentType: String,
         statusCode: Int = 200,

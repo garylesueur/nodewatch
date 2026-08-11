@@ -16,8 +16,11 @@ final class ServiceStore: ObservableObject {
     static let defaultAgentMarkers = "agent, mcp, model-context-protocol, ai-sdk"
 
     @Published var services: [NodeService] = []
-    @Published var showHelpers: Bool {
-        didSet { UserDefaults.standard.set(showHelpers, forKey: "display.showHelpers") }
+    @Published var visiblePresentations: Set<WorkloadPresentation> {
+        didSet {
+            let values = visiblePresentations.map(\.rawValue).sorted()
+            UserDefaults.standard.set(values, forKey: "display.visibleWorkloadTypes")
+        }
     }
 
     @Published private(set) var hasCompletedInitialScan = false
@@ -83,7 +86,17 @@ final class ServiceStore: ObservableObject {
         mobileMarkersText = defaults.string(forKey: "presentation.mobileMarkers") ?? Self.defaultMobileMarkers
         agentMarkersText = defaults.string(forKey: "presentation.agentMarkers") ?? Self.defaultAgentMarkers
         treatListenersAsServers = defaults.object(forKey: "detection.listenersAreServers") as? Bool ?? true
-        showHelpers = defaults.object(forKey: "display.showHelpers") as? Bool ?? false
+        let initialVisiblePresentations: Set<WorkloadPresentation>
+        if let savedTypes = defaults.stringArray(forKey: "display.visibleWorkloadTypes") {
+            initialVisiblePresentations = Set(savedTypes.compactMap(WorkloadPresentation.init(rawValue:)))
+        } else {
+            var migratedPresentations = WorkloadPresentation.defaultVisible
+            if defaults.object(forKey: "display.showHelpers") as? Bool == true {
+                migratedPresentations.insert(.tool)
+            }
+            initialVisiblePresentations = migratedPresentations
+        }
+        visiblePresentations = initialVisiblePresentations
         refreshInterval = defaults.object(forKey: "behavior.refreshInterval") as? Double ?? 5
         terminalAppPath = defaults.string(forKey: "behavior.terminalAppPath")
             ?? "/System/Applications/Utilities/Terminal.app"
@@ -128,7 +141,25 @@ final class ServiceStore: ObservableObject {
     }
 
     var visibleServices: [NodeService] {
-        treeOrdered(services.filter { showHelpers || $0.kind != .helper })
+        let filtered = services.filter { visiblePresentations.contains(presentation(for: $0)) }
+        let sorted = filtered.sorted { lhs, rhs in
+            let lhsPresentation = presentation(for: lhs)
+            let rhsPresentation = presentation(for: rhs)
+            if lhsPresentation.sortPriority != rhsPresentation.sortPriority {
+                return lhsPresentation.sortPriority < rhsPresentation.sortPriority
+            }
+            let projectOrder = lhs.projectName.localizedStandardCompare(rhs.projectName)
+            if projectOrder != .orderedSame {
+                return projectOrder == .orderedAscending
+            }
+            let nameOrder = lhs.name.localizedStandardCompare(rhs.name)
+            return nameOrder == .orderedSame ? lhs.pid < rhs.pid : nameOrder == .orderedAscending
+        }
+        return treeOrdered(sorted)
+    }
+
+    var hiddenServiceCount: Int {
+        services.count - visibleServices.count
     }
 
     var serverCount: Int {
@@ -218,6 +249,22 @@ final class ServiceStore: ObservableObject {
         return .process
     }
 
+    func isPresentationVisible(_ presentation: WorkloadPresentation) -> Bool {
+        visiblePresentations.contains(presentation)
+    }
+
+    func setPresentation(_ presentation: WorkloadPresentation, isVisible: Bool) {
+        if isVisible {
+            visiblePresentations.insert(presentation)
+        } else {
+            visiblePresentations.remove(presentation)
+        }
+    }
+
+    func showAllPresentations() {
+        visiblePresentations = Set(WorkloadPresentation.allCases)
+    }
+
     private func hasMobileProjectConfig(_ directory: String?) -> Bool {
         guard let directory else { return false }
         let candidates = ["app.json", "app.config.js", "app.config.ts", "app.config.mjs"]
@@ -260,7 +307,7 @@ final class ServiceStore: ObservableObject {
         mobileMarkersText = Self.defaultMobileMarkers
         agentMarkersText = Self.defaultAgentMarkers
         treatListenersAsServers = true
-        showHelpers = false
+        visiblePresentations = WorkloadPresentation.defaultVisible
         refreshInterval = 5
         terminalAppPath = "/System/Applications/Utilities/Terminal.app"
         probeWebServices = true
